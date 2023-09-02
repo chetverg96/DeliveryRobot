@@ -6,8 +6,9 @@ public class RobotRouteGenerator {
     private static final String LETTERS = "RLRFR";  //строка команд, которые робот может выполнить.
     private static final int LENGTH = 100; // количество команд в  маршруте.
     private static final int NUM_THREADS = 1000; // количество потоков.
-    public static ConcurrentHashMap<Integer, Integer> sizeToFreq = new ConcurrentHashMap<>(); 
+    public static final Map<Integer, Integer> sizeToFreq = new HashMap<>();
 
+    public static final Object LOCK = new Object();
 
     public static void main(String[] args) {
 
@@ -17,11 +18,11 @@ public class RobotRouteGenerator {
             service.submit(() -> {
                 String route = generateRoute(LETTERS, LENGTH);
                 int freq = calculateFrequency(route, 'R');
-                sizeToFreq.compute(freq, (key, val) -> val == null ? 1 : val + 1);
+                synchronized (LOCK) {
+                    sizeToFreq.put(freq, sizeToFreq.getOrDefault(freq, 0) + 1);
+                }
             });
         }
-        // Для каждого из NUM_THREADS потоков отправляю задачу, в которой генерирую маршрут, считаю частоту правых поворотов
-        // и обновляю значение.
 
         service.shutdown();
         try {
